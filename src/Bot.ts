@@ -14,8 +14,7 @@ logs(client);
 class Bot {
 
     private intervalCheckActivities: any = undefined;
-    private userIdToAppId = undefined;
-    private userIdToGuildId = undefined;
+    private userIdToAppName = undefined;
 
     constructor() {
         this.chunkString = this.chunkString.bind(this);
@@ -112,7 +111,7 @@ class Bot {
             }
             const data = user.presence.activities
                 // Only get where it is playing and the app ID is recognised as a game.
-                .filter(act => act.type === "PLAYING" && act.applicationID !== null)
+                .filter(act => act.type === "PLAYING" && act.name !== null)
                 .flatMap(act => { 
                     return {
                         ...act,
@@ -133,8 +132,8 @@ class Bot {
         });
 
         // If first time through, we need to start sessions for everyone involved.
-        if (this.userIdToAppId === undefined) {
-            this.userIdToAppId = curUserIdToAppId;
+        if (this.userIdToAppName === undefined) {
+            this.userIdToAppName = curUserIdToAppId;
             const curUserIdToAppIdDb = (await ConfigDatabase.getSessionsForUsersById(userIds, undefined, undefined, undefined, true));
             
             // The rest of them we need to add as new sessions.curUserIdToAppIdDb
@@ -154,8 +153,8 @@ class Bot {
 
             return;
         } 
-        let updates = curUserIdToAppId.filter(this.userIdComparer(this.userIdToAppId));
-        let updatedOriginalData = this.userIdToAppId.filter(this.userIdComparer(curUserIdToAppId));
+        let updates = curUserIdToAppId.filter(this.userIdComparer(this.userIdToAppName));
+        let updatedOriginalData = this.userIdToAppName.filter(this.userIdComparer(curUserIdToAppId));
         
         const allUpdatesAndOriginals = updates.concat(updatedOriginalData);
         
@@ -174,8 +173,9 @@ class Bot {
 
     private userIdComparer(otherArray){
         return function(current){
-            return otherArray.filter(function(other){
-            return other.userId == current.userId && other.applicationId == current.applicationId
+            return otherArray.filter(function(other){ 
+            // Change to activity name instead. Allows to capture more games.
+            return other.userId == current.userId && other.activityName == current.activityName
             }).length == 0;
         }
     }
