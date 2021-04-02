@@ -1,5 +1,5 @@
 import { Guild, User } from "discord.js";
-import { Db, MongoClient, ObjectId } from "mongodb";
+import { Db, MongoClient, ObjectId, Logger } from "mongodb";
 
 const connectionUrl = "mongodb://localhost:27017/";
 const dbName = "discord-game-statistics";
@@ -64,6 +64,7 @@ class InternalConfigDatabase {
                     id: userId,
                     guildIds: [],
                     sessionIds: [],
+                    // Possibly add some bools here for dming a user when a session starts/ends.
                 }
             }, {
                 upsert: true,
@@ -160,11 +161,11 @@ class InternalConfigDatabase {
         }
     }
 
-    public async startSessionForUser(user: User, session: SessionConfig) {
+    public async startSessionForUser(user: User, session: SessionConfig): Promise<SessionConfig> {
         return await this.startSessionForUserById(user.id, session);
     }
 
-    public async startSessionForUserById(userId: string, session: SessionConfig) {
+    public async startSessionForUserById(userId: string, session: SessionConfig): Promise<SessionConfig> {
         // Always kill the alive session, a user cannot be playing two sessions at once.
         await this.endCurrentSessionForUserById(userId);
 
@@ -172,8 +173,8 @@ class InternalConfigDatabase {
         const sessionCollection = db.collection(sessionCollectionName);
         try {
             const sessionCreatedResult = await sessionCollection.insertOne({
-                startTime: session.startTime.getTime(),
-                endTime: session.endTime ? session.endTime.getTime() : -1,
+                startTime: (session.startTime) ? (<Date>session.startTime).getTime() : new Date(),
+                endTime: (session.endTime) ? (<Date>session.endTime).getTime() : -1,
                 applicationId: session.applicationId,
                 activityType: session.activityType,
                 activityName: session.activityName,
@@ -197,7 +198,8 @@ class InternalConfigDatabase {
                     }
                 }
             });
-            return userSessionAddResult;
+
+            return await sessionCollection.findOne({_id: sessionCreatedResult.insertedId});
         } catch (e) {
             console.error('startSessionForUserById', e);
             return undefined;
@@ -250,7 +252,7 @@ class InternalConfigDatabase {
                 $match: {
                     $and: <any[]>[
                         {
-                            guildIds: {
+                            'userDetails.guildIds': {
                                 $in: guilds
                             }
                         },
@@ -278,7 +280,10 @@ class InternalConfigDatabase {
             if (!!activityNameContains) {
                 findQuery.$match.$and.push(
                     {
-                        activityName: new RegExp(activityNameContains)
+                        activityName: {
+                            $regex: activityNameContains,
+                            $options: 'i'
+                        }
                     });
             }
             if (!!currentSessionsOnly) {
@@ -322,7 +327,7 @@ class InternalConfigDatabase {
                 $match: {
                     $and: <any[]>[
                         {
-                            guildIds: {
+                            'userDetails.guildIds': {
                                 $in: guilds
                             }
                         },
@@ -411,11 +416,11 @@ class InternalConfigDatabase {
     }
 
     // Always call this before starting a new session.
-    public async endCurrentSessionForUser(user: User) {
+    public async endCurrentSessionForUser(user: User) : Promise<SessionConfig> {
         return await this.endCurrentSessionForUserById(user.id);
     }
 
-    public async endCurrentSessionForUserById(userId: string) {
+    public async endCurrentSessionForUserById(userId: string) : Promise<SessionConfig> {
         const sessionCollection = db.collection(sessionCollectionName);
         try {
             const lastSessionResult = await sessionCollection.findOneAndUpdate({ endTime: -1, userId: userId }, {
@@ -426,7 +431,7 @@ class InternalConfigDatabase {
                 upsert: false,
                 returnOriginal: false,
             })
-            return lastSessionResult;
+            return <SessionConfig>lastSessionResult.value;
         } catch (e) {
             console.error('endCurrentSessionForUserById', e);
             return undefined;
@@ -445,8 +450,8 @@ export interface SessionConfigWithUserDetails extends SessionConfig {
 }
 
 export interface SessionConfig {
-    startTime: Date;
-    endTime?: Date;
+    startTime: Date | number;
+    endTime?: Date | number;
 
     applicationId: string;
     activityType: string;
