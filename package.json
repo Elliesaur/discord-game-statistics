@@ -1,0 +1,27 @@
+{
+  "name": "discord-game-statistics",
+  "version": "1.0.0",
+  "description": "Game statistics for Discord",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Elliesaur/discord-game-statistics.git"
+  },
+  "author": "Elliesaur",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Elliesaur/discord-game-statistics/issues"
+  },
+  "homepage": "https://github.com/Elliesaur/discord-game-statistics#readme",
+  "dependencies": {
+    "@types/mongodb": "^3.6.11",
+    "@types/node": "^14.14.37",
+    "discord-logs": "^1.9.0",
+    "discord.js": "^12.5.2",
+    "dotenv": "^8.2.0",
+    "mongodb": "^3.6.5"
+  }
+}
