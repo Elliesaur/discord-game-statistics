@@ -146,7 +146,7 @@ class Bot {
             // Only add new sessions to the db, or those who have changed from the existing db.
             toAddSessionsOf.concat(dbUpdates).forEach(async act => {
                 await ConfigDatabase.startSessionForUserById(act.userId, <SessionConfig>{
-                    startTime: act.timestamps.start ? act.timestamps.start : new Date(),
+                    startTime: act.timestamps ? (act.timestamps.start ? act.timestamps.start : new Date()) : new Date(),
                     ...act
                 });
             });
