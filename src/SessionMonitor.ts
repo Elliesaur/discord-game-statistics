@@ -122,7 +122,8 @@ export class SessionMonitor {
             // To remove - sessions concluded.
             dbOriginal.forEach(async act => {
                 const endedSession = await ConfigDatabase.endCurrentSessionForUserById(act.userId);
-                await this.onSessionEnd(act, endedSession);
+                if (endedSession !== null)
+                    await this.onSessionEnd(act, endedSession);
             });
 
             return;
@@ -147,7 +148,8 @@ export class SessionMonitor {
         });
         sessionEndRequired.forEach(async act => {
             const endedSession = await ConfigDatabase.endCurrentSessionForUserById(act.userId);
-            await this.onSessionEnd(act, endedSession);
+            if (endedSession !== null)
+                await this.onSessionEnd(act, endedSession);
         });
         this.userIdToAppName = curUserIdToAppId;
     }

@@ -71,15 +71,17 @@ class Bot {
             try {
                 const targetUser = client.users.cache.find(u => u.id === act.userId);
                 const dmChannel = await targetUser.createDM();
+                console.log('Ended', endedSession);
 
-                const formattedStartTime = dayjs((<number>endedSession.startTime));
-                const curTime = dayjs();
-                const timePlayedHuman = formattedStartTime.from(curTime, true);
-
+                if (endedSession.startTime) {
+                    const formattedStartTime = dayjs((<number>endedSession.startTime));
+                    const curTime = dayjs();
+                    const timePlayedHuman = formattedStartTime.from(curTime, true);
+                }
                 //await dmChannel.send(`You played a session of ${this.safe(act.name)} for ${timePlayedHuman}, hope you had fun!`);
                 //console.log('DM successfully sent!');
             } catch (e) {
-                console.error('Failed to alert user via dm (disabled?) who started a session', e);
+                console.error('Failed to alert user via dm (disabled?) who ended a session', e);
             }
         };
     }
